@@ -62,14 +62,17 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun GameScreen(viewModel: BallViewModel) {
-    // TODO: Initialize the sensorManager
+    // : Initialize the sensorManager
+
+    val gameContext = LocalContext.current
+
     val sensorManager = remember {
-        // ... getSystemService ...
+        gameContext.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     }
 
-    // TODO: Get the gravitySensor
+    // : Get the gravitySensor
     val gravitySensor = remember {
-        // ... getDefaultSensor ...
+        sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY)
     }
 
     // This effect runs when the composable enters the screen
@@ -77,9 +80,9 @@ fun GameScreen(viewModel: BallViewModel) {
     DisposableEffect(sensorManager, gravitySensor) {
         val listener = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent?) {
-                // TODO: Pass the sensor event to the ViewModel
+                // : Pass the sensor event to the ViewModel
                 event?.let {
-                    // ...
+                    viewModel.onSensorDataChanged(it)
                 }
             }
             override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
@@ -87,18 +90,23 @@ fun GameScreen(viewModel: BallViewModel) {
             }
         }
 
-        // TODO: Register the sensor listener
+        // : Register the sensor listener
         // (Don't forget to add a null check for gravitySensor!)
         if (gravitySensor != null) {
-            // ... sensorManager.registerListener ...
+           sensorManager.registerListener(
+               listener,
+               gravitySensor,
+               SensorManager.SENSOR_DELAY_GAME
+           )
         }
 
         // onDispose is called when the composable leaves the screen
         onDispose {
-            // TODO: Unregister the sensor listener
+            // : Unregister the sensor listener
             // (Don't forget to add a null check for gravitySensor!)
             if (gravitySensor != null) {
-                // ... sensorManager.unregisterListener ...
+                sensorManager.unregisterListener(listener, gravitySensor)
+
             }
         }
     }
@@ -108,7 +116,8 @@ fun GameScreen(viewModel: BallViewModel) {
         // 1. The Reset Button
         Button(
             onClick = {
-                // TODO: Call the reset function on the ViewModel
+                // : Call the reset function on the ViewModel
+                viewModel.reset()
             },
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
@@ -121,11 +130,11 @@ fun GameScreen(viewModel: BallViewModel) {
         val ballSize = 50.dp
         val ballSizePx = with(LocalDensity.current) { ballSize.toPx() }
 
-        // TODO: Collect the ball's position from the ViewModel
-        // val ballPosition by viewModel.ballPosition.collectAsStateWithLifecycle()
+        // : Collect the ball's position from the ViewModel
+        val ballPosition by viewModel.ballPosition.collectAsStateWithLifecycle()
 
-        // Placeholder, remove when TODO is done:
-        val ballPosition = Offset.Zero
+        // Placeholder, remove when :
+        // val ballPosition = Offset.Zero
 
 
         Box(
@@ -137,8 +146,12 @@ fun GameScreen(viewModel: BallViewModel) {
                     contentScale = ContentScale.FillBounds
                 )
                 .onSizeChanged { size ->
-                    // TODO: Tell the ViewModel the size of the field
-                    // viewModel.initBall(...)
+                    // : Tell the ViewModel the size of the field
+                    viewModel.initBall(
+                        fieldWidth = size.width.toFloat(),
+                        fieldHeight = size.height.toFloat(),
+                        ballSizePx = ballSizePx
+                    )
                 }
         ) {
             // 3. The Ball
@@ -148,7 +161,7 @@ fun GameScreen(viewModel: BallViewModel) {
                 modifier = Modifier
                     .size(ballSize)
                     .offset {
-                        // TODO: Use the collected ballPosition to set the offset
+                        // : Use the collected ballPosition to set the offset
                         // Hint: You need to convert Float to Int
                         IntOffset(
                             x = ballPosition.x.roundToInt(),
